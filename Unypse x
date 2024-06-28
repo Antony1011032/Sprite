@@ -1,6 +1,10 @@
 -- Local Script (StarterPlayerScripts)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local DataStoreService = game:GetService("DataStoreService")
+
+-- DataStore setup (replace with your own DataStore name)
+local scriptDataStore = DataStoreService:GetDataStore("PlayerScriptData")
 
 -- Function to create the GUI
 local function createGUI()
@@ -17,6 +21,8 @@ local function createGUI()
     local CloseButton = Instance.new("TextButton")
     local ScriptTextBox = Instance.new("TextBox")
     local ExecuteButton = Instance.new("TextButton")
+    local SaveButton = Instance.new("TextButton")
+    local LoadButton = Instance.new("TextButton")
 
     ScreenGui.Name = "ScreenGui"
     ScreenGui.Parent = Players.LocalPlayer.PlayerGui
@@ -41,16 +47,16 @@ local function createGUI()
     ScriptTextBox.Parent = MainFrame
     ScriptTextBox.PlaceholderText = "Enter script here"
     ScriptTextBox.Text = ""
-    ScriptTextBox.Position = UDim2.new(0.1, 0, 0.5, -25)
-    ScriptTextBox.Size = UDim2.new(0.8, 0, 0.2, 0)
+    ScriptTextBox.Position = UDim2.new(0.1, 0, 0.1, 0)  -- Adjusted position to fit better
+    ScriptTextBox.Size = UDim2.new(0.8, 0, 0.4, 0)   -- Adjusted size to fit better
     ScriptTextBox.TextWrapped = true
     ScriptTextBox.TextScaled = true
 
     -- ExecuteButton Setup
     ExecuteButton.Parent = MainFrame
     ExecuteButton.Text = "Execute Script"
-    ExecuteButton.Position = UDim2.new(0.5, -100, 0.8, -25)
-    ExecuteButton.Size = UDim2.new(0, 200, 0, 50)
+    ExecuteButton.Position = UDim2.new(0.1, 0, 0.55, 0)  -- Adjusted position to fit better
+    ExecuteButton.Size = UDim2.new(0.4, 0, 0, 50)       -- Adjusted size to fit better
 
     ExecuteButton.MouseButton1Click:Connect(function()
         local scriptCode = ScriptTextBox.Text
@@ -60,6 +66,36 @@ local function createGUI()
             if not success then
                 warn("Error executing script: " .. errorMessage)
             end
+        else
+            warn("Failed to load script.")
+        end
+    end)
+
+    -- SaveButton Setup
+    SaveButton.Parent = MainFrame
+    SaveButton.Text = "Save Script"
+    SaveButton.Position = UDim2.new(0.55, 0, 0.55, 0)  -- Adjusted position to fit better
+    SaveButton.Size = UDim2.new(0.4, 0, 0, 50)         -- Adjusted size to fit better
+
+    SaveButton.MouseButton1Click:Connect(function()
+        local scriptCode = ScriptTextBox.Text
+        scriptDataStore:SetAsync(tostring(Players.LocalPlayer.UserId), scriptCode)
+        print("Script saved!")
+    end)
+
+    -- LoadButton Setup
+    LoadButton.Parent = MainFrame
+    LoadButton.Text = "Load Script"
+    LoadButton.Position = UDim2.new(0.1, 0, 0.7, 0)   -- Adjusted position to fit better
+    LoadButton.Size = UDim2.new(0.4, 0, 0, 50)        -- Adjusted size to fit better
+
+    LoadButton.MouseButton1Click:Connect(function()
+        local success, scriptCode = pcall(function()
+            return scriptDataStore:GetAsync(tostring(Players.LocalPlayer.UserId))
+        end)
+        if success and scriptCode then
+            ScriptTextBox.Text = scriptCode
+            print("Script loaded!")
         else
             warn("Failed to load script.")
         end
