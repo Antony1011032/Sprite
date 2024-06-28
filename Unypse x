@@ -1,0 +1,139 @@
+-- Local Script (StarterPlayerScripts)
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+-- Function to create the GUI
+local function createGUI()
+    -- Check if GUI already exists and destroy it
+    local existingGui = Players.LocalPlayer.PlayerGui:FindFirstChild("ScreenGui")
+    if existingGui then
+        existingGui:Destroy()
+    end
+
+    -- Create GUI
+    local ScreenGui = Instance.new("ScreenGui")
+    local MainFrame = Instance.new("Frame")
+    local Decal = Instance.new("ImageLabel")
+    local CloseButton = Instance.new("TextButton")
+    local ScriptTextBox = Instance.new("TextBox")
+    local ExecuteButton = Instance.new("TextButton")
+
+    ScreenGui.Name = "ScreenGui"
+    ScreenGui.Parent = Players.LocalPlayer.PlayerGui
+
+    -- MainFrame Setup
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = ScreenGui
+    MainFrame.Size = UDim2.new(0, 300, 0, 400)
+    MainFrame.Position = UDim2.new(0.02, 0, 0.02, 0)  -- Top-left corner with a small offset
+    MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+
+    -- Decal Setup
+    Decal.Parent = MainFrame
+    Decal.Image = "rbxassetid://18244715286"
+    Decal.Position = UDim2.new(0, 10, 0, 10)  -- Top-left corner with a 10-pixel offset
+    Decal.Size = UDim2.new(0, 100, 0, 100)  -- Size of the decal, adjust as needed
+    Decal.BackgroundTransparency = 1  -- Make sure the background is transparent
+
+    -- ScriptTextBox Setup
+    ScriptTextBox.Parent = MainFrame
+    ScriptTextBox.PlaceholderText = "Enter script here"
+    ScriptTextBox.Text = ""
+    ScriptTextBox.Position = UDim2.new(0.1, 0, 0.5, -25)
+    ScriptTextBox.Size = UDim2.new(0.8, 0, 0.2, 0)
+    ScriptTextBox.TextWrapped = true
+    ScriptTextBox.TextScaled = true
+
+    -- ExecuteButton Setup
+    ExecuteButton.Parent = MainFrame
+    ExecuteButton.Text = "Execute Script"
+    ExecuteButton.Position = UDim2.new(0.5, -100, 0.8, -25)
+    ExecuteButton.Size = UDim2.new(0, 200, 0, 50)
+
+    ExecuteButton.MouseButton1Click:Connect(function()
+        local scriptCode = ScriptTextBox.Text
+        local loadScriptFunction = loadstring(scriptCode)
+        if loadScriptFunction then
+            local success, errorMessage = pcall(loadScriptFunction)
+            if not success then
+                warn("Error executing script: " .. errorMessage)
+            end
+        else
+            warn("Failed to load script.")
+        end
+    end)
+
+    -- CloseButton Setup
+    CloseButton.Parent = MainFrame
+    CloseButton.Text = "X"
+    CloseButton.Position = UDim2.new(1, -50, 0, 0)  -- Top-right corner with a 50-pixel offset from the right
+    CloseButton.Size = UDim2.new(0, 50, 0, 50)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    -- Enable dragging functionality for both desktop and mobile
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    MainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput then
+            update(input)
+        end
+    end)
+end
+
+-- Initial creation of GUI
+createGUI()
+
+-- Reload GUI function
+local function reloadGUI()
+    if Players.LocalPlayer.PlayerGui:FindFirstChild("ScreenGui") then
+        Players.LocalPlayer.PlayerGui.ScreenGui:Destroy()
+    end
+    createGUI()
+end
+
+-- Listen for player character respawning
+Players.LocalPlayer.CharacterAdded:Connect(function(character)
+    -- Wait for character to be fully loaded
+    character:WaitForChild("Humanoid").Died:Connect(function()
+        -- Reload GUI on player death
+        reloadGUI()
+    end)
+end)
+
+-- Listen for player reset
+Players.LocalPlayer.CharacterRemoving:Connect(function()
+    reloadGUI()
+end)
